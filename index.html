@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>S.I.G.O.P - Manager Edition</title>
+    <style>
+        :root {
+            --bg-dark: #050505;
+            --bg-panel: #0a0a0a;
+            --border: #333;
+            --text-main: #e0e0e0;
+            --accent: #d4af37;
+            --danger: #b91c1c;
+            --mental: #2563eb;
+            --energy: #eab308;
+            --switch-on: #22c55e;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; font-size: 14px; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+        body { background-color: var(--bg-dark); color: var(--text-main); margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+        /* TOPO */
+        .top-bar {
+            background: #111; border-bottom: 1px solid var(--border); height: 50px;
+            display: flex; align-items: center; justify-content: space-between; padding: 0 10px; z-index: 100;
+        }
+        .toggle-btn { background: #222; border: 1px solid #444; color: #aaa; width: 40px; height: 32px; cursor: pointer; border-radius: 4px; font-size:1.2em; display:flex; align-items:center; justify-content:center; }
+        .toggle-btn:hover { background: var(--accent); color: #000; border-color: var(--accent); }
+        
+        .nav-center { display: flex; height: 100%; gap: 0; }
+        .nav-btn {
+            background: transparent; border: none; color: #666; font-weight: bold; font-size: 1em;
+            padding: 0 15px; height: 100%; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.2s;
+        }
+        .nav-btn:hover { color: #fff; background: #181818; }
+        .nav-btn.active { color: var(--accent); border-bottom-color: var(--accent); background: #151515; }
+
+        /* MENU SISTEMA */
+        .sys-btn { background: var(--accent); color: #000; font-weight: bold; border: none; padding: 5px 15px; cursor: pointer; border-radius: 4px; margin-left: 10px; }
+        .sys-btn:hover { background: #fff; }
+
+        /* SWITCH */
+        .switch-box { display: flex; align-items: center; gap: 8px; margin-right: 10px; }
+        .switch-label { font-size: 0.8em; color: #888; text-transform: uppercase; font-weight: bold; }
+        .switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--switch-on); }
+        input:checked + .slider:before { transform: translateX(16px); }
+
+        /* LAYOUT */
+        .main-layout { display: flex; flex: 1; overflow: hidden; }
+        .col-side { width: 280px; background: var(--bg-panel); border-right: 1px solid var(--border); display: flex; flex-direction: column; transition: 0.3s; overflow: hidden; }
+        .col-side.collapsed { width: 0; border: none; opacity: 0; }
+        .col-right { border-right: none; border-left: 1px solid var(--border); padding: 10px; }
+        .col-center { flex: 1; padding: 15px; overflow-y: auto; background: #050505; display: flex; flex-direction: column; }
+
+        /* COMPONENTES */
+        h3 { color: var(--accent); border-bottom: 1px solid #444; margin: 0 0 10px 0; padding-bottom: 5px; font-size: 1.1em; letter-spacing: 1px; text-transform: uppercase; }
+        label { color: #777; font-size: 0.75em; text-transform: uppercase; display: block; margin-bottom: 2px; }
+        input, select, textarea { background: #000; border: 1px solid #444; color: white; padding: 8px; width: 100%; margin-bottom: 8px; }
+        input:focus { border-color: var(--accent); outline: none; }
+
+        /* MODAIS */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-box { background: #111; border: 1px solid var(--accent); padding: 20px; width: 500px; border-radius: 6px; max-height: 80vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; border-bottom: 1px solid #333; margin-bottom: 15px; padding-bottom: 5px; }
+        .modal-title { color: var(--accent); font-size: 1.3em; font-weight: bold; }
+        .btn-close { background: none; border: none; color: #555; cursor: pointer; font-size: 1.2em; }
+        .btn-close:hover { color: #fff; }
+
+        .save-slot { background: #1a1a1a; padding: 10px; margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #333; }
+        .save-slot:hover { border-color: #666; }
+        .slot-name { font-weight: bold; font-size: 1.1em; }
+        .slot-info { font-size: 0.8em; color: #888; }
+
+        /* BARRAS */
+        .bars-container { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .bar-card { background: #111; padding: 8px; border: 1px solid #333; border-radius: 4px; }
+        .bar-top { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 5px; font-size: 1.1em; }
+        .track { width: 100%; height: 10px; background: #222; margin-bottom: 8px; border-radius: 5px; overflow: hidden; }
+        .fill { height: 100%; transition: 0.3s; }
+        .btn-ctrls { display: flex; gap: 2px; }
+        .btn-ctrls button { flex: 1; background: #252525; border: none; color: #aaa; cursor: pointer; padding: 4px; }
+        .btn-ctrls button:hover { background: #444; color: white; }
+
+        /* ATRIBUTOS */
+        .pentagram { display: flex; justify-content: center; gap: 15px; background: #0e0e0e; padding: 15px; border: 1px solid var(--border); margin-bottom: 10px; }
+        .attr-input { width: 50px; height: 50px; border-radius: 50%; text-align: center; font-size: 1.8em; font-weight: bold; border: 2px solid #333; background: #000; color: #fff; }
+        .points-warning { color: var(--danger); font-weight: bold; }
+        .points-ok { color: var(--switch-on); font-weight: bold; }
+
+        /* LISTAS & COMPÊNDIO */
+        .item-list { display: flex; flex-direction: column; gap: 5px; }
+        .item-card { background: #161616; padding: 8px; border-left: 3px solid #444; display: flex; justify-content: space-between; align-items: center; }
+        .item-card:hover { background: #222; border-left-color: var(--accent); }
+        .btn-action { background: #222; border: 1px solid #444; color: #ccc; cursor: pointer; padding: 4px 8px; margin-left: 5px; }
+        .btn-action:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-del { border-color: #500; color: #d55; } .btn-del:hover { background: #500; color: #fff; }
+
+        .comp-filters { display: flex; gap: 5px; margin-bottom: 10px; flex-wrap: wrap; }
+        .filter-btn { flex: 1; background: #111; border: 1px solid #333; color: #888; padding: 8px; cursor: pointer; font-weight: bold; }
+        .filter-btn.active { border-color: var(--accent); color: var(--accent); background: #1a1a1a; }
+        .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+        .comp-card { background: #111; border: 1px solid #333; padding: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .comp-card:hover { border-color: #666; background: #181818; }
+        .add-icon { color: var(--switch-on); font-weight: bold; font-size: 1.2em; border: 1px solid #333; width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 4px; }
+        .add-icon:hover { background: var(--switch-on); color: black; }
+
+        /* LOG */
+        #log { flex: 1; background: #000; border: 1px solid var(--border); padding: 10px; overflow-y: auto; font-family: monospace; font-size: 0.9em; margin-top: 10px; }
+        .log-entry { margin-bottom: 6px; border-bottom: 1px solid #222; padding-bottom: 4px; }
+        .res { color: var(--accent); font-weight: bold; }
+        .dice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-bottom: 10px; }
+        .hidden { display: none !important; }
+
+        /* ABAS */
+        .tab-content { display: none; height: 100%; }
+        .tab-content.active { display: block; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* Perícias */
+        .skill-list { padding: 10px; overflow-y: auto; flex: 1; }
+        .skill-row { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #222; }
+        .skill-dice { width: 24px; height: 24px; border-radius: 50%; border: 1px solid #444; background: none; color: #aaa; cursor: pointer; }
+        .skill-dice:hover { background: var(--accent); color: black; border-color: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+    <div id="modal-manager" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title">Gestão de Agentes</span>
+                <button class="btn-close" onclick="closeModal('manager')">X</button>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <button class="btn-action" style="flex:1; background:var(--accent); color:black;" onclick="createNewChar()">+ NOVO AGENTE</button>
+                <button class="btn-action" style="flex:1;" onclick="exportChar()">BAIXAR FICHA (.json)</button>
+                <label class="btn-action" style="flex:1; text-align:center; cursor:pointer; margin:0;">
+                    CARREGAR FICHA
+                    <input type="file" id="import-file" style="display:none;" onchange="importChar(this)">
+                </label>
+            </div>
+
+            <h4 style="color:#777; border-bottom:1px solid #333;">Meus Agentes Salvos</h4>
+            <div id="saved-chars-list">
+                </div>
+        </div>
+    </div>
+
+    <div id="modal-create" class="modal-overlay">
+        <div class="modal-box">
+            <div class="modal-header">
+                <span class="modal-title">Criar Homebrew</span>
+                <button class="btn-close" onclick="closeModal('create')">X</button>
+            </div>
+            <label>TIPO</label>
+            <select id="new-type" onchange="toggleModalFields()">
+                <option value="weapon">Arma</option><option value="ritual">Ritual</option><option value="item">Item</option><option value="power">Poder</option>
+            </select>
+            <label>NOME</label><input type="text" id="new-name">
+            <div id="field-dmg"><label>DANO / EFEITO</label><input type="text" id="new-dmg"></div>
+            <div id="field-crit"><label>CRÍTICO</label><input type="text" id="new-crit"></div>
+            <div id="field-cost" style="display:none;"><label>CUSTO (PD)</label><input type="number" id="new-cost" value="1"></div>
+            <label>DESCRIÇÃO</label><textarea id="new-desc" rows="3"></textarea>
+            <button class="btn-action" style="width:100%; background:var(--accent); color:black;" onclick="saveHomebrew()">SALVAR</button>
+        </div>
+    </div>
+
+    <div class="top-bar">
+        <div style="display:flex; align-items:center; gap:10px;">
+            <button class="toggle-btn" onclick="toggleSide('col-left')" title="Perícias">☰</button>
+            <button class="sys-btn" onclick="openManager()">💾 SISTEMA</button>
+        </div>
+        
+        <div class="nav-center">
+            <button class="nav-btn active" onclick="tab('char')">AGENTE</button>
+            <button class="nav-btn" onclick="tab('inv')">ARSENAL</button>
+            <button class="nav-btn" onclick="tab('ocult')">OCULTISMO</button>
+            <button class="nav-btn" onclick="tab('comp')">COMPÊNDIO</button>
+        </div>
+
+        <div style="display:flex; align-items:center;">
+            <div class="switch-box">
+                <span class="switch-label">Físico</span>
+                <label class="switch"><input type="checkbox" id="phy-switch" onchange="togglePhy()"><span class="slider"></span></label>
+            </div>
+            <button class="toggle-btn" onclick="toggleSide('col-right')" title="Log">🎲</button>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        
+        <div id="col-left" class="col-side">
+            <h3 style="text-align:center; padding-top:10px;">Perícias</h3>
+            <div id="skills-container" class="skill-list"></div>
+        </div>
+
+        <div class="col-center">
+            
+            <div id="tab-char" class="tab-content active">
+                <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 15px;">
+                    <div style="grid-column: span 2; display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                        <div><label>Nome</label><input type="text" id="char-name" onchange="autoSave()"></div>
+                        <div><label>Jogador</label><input type="text" id="player-name" onchange="autoSave()"></div>
+                    </div>
+                    <div><label>Classe</label><select id="selClass" onchange="updateClass(); autoSave()"></select></div>
+                    <div><label>NEX %</label><input type="number" id="nex" value="5" step="5" min="0" max="99" onchange="updateAll(); autoSave()"></div>
+                    <div><label>Origem</label><select id="selOrigem" onchange="autoSave()"></select></div>
+                    <div style="grid-column: span 3;"><label>Trilha</label><select id="selTrilha" onchange="updateAll(); autoSave()"></select></div>
+                </div>
+
+                <div class="pentagram">
+                    <div class="attr-box"><input type="number" id="agi" value="1" max="5" class="attr-input" onchange="updateAll(); autoSave()"><label>AGI</label></div>
+                    <div class="attr-box"><input type="number" id="for" value="1" max="5" class="attr-input" onchange="updateAll(); autoSave()"><label>FOR</label></div>
+                    <div class="attr-box"><input type="number" id="int" value="1" max="5" class="attr-input" onchange="updateAll(); autoSave()"><label>INT</label></div>
+                    <div class="attr-box"><input type="number" id="pre" value="1" max="5" class="attr-input" onchange="updateAll(); autoSave()"><label>PRE</label></div>
+                    <div class="attr-box"><input type="number" id="vig" value="1" max="5" class="attr-input" onchange="updateAll(); autoSave()"><label>VIG</label></div>
+                </div>
+                
+                <div style="text-align:center; margin-bottom:20px; font-size:0.9em; background:#111; padding:5px; border:1px solid #333;">
+                    <span id="points-msg">Pontos Totais: 5/9</span>
+                </div>
+
+                <div class="bars-container">
+                    <div class="bar-card">
+                        <div class="bar-top"><span>PV</span> <span id="txtPV">0/0</span></div>
+                        <div class="track"><div class="fill" id="barPV" style="background:var(--danger); width:100%"></div></div>
+                        <div class="btn-ctrls">
+                            <button onclick="mod('pv',-10)">-10</button><button onclick="mod('pv',-1)">-1</button>
+                            <button onclick="mod('pv',1)">+1</button><button onclick="mod('pv',10)">+10</button>
+                        </div>
+                    </div>
+                    <div class="bar-card">
+                        <div class="bar-top"><span>PD</span> <span id="txtPD">0/0</span></div>
+                        <div class="track"><div class="fill" id="barPD" style="background:var(--mental); width:100%"></div></div>
+                        <div class="btn-ctrls">
+                            <button onclick="mod('pd',-10)">-10</button><button onclick="mod('pd',-1)">-1</button>
+                            <button onclick="mod('pd',1)">+1</button><button onclick="mod('pd',10)">+10</button>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Habilidades de Trilha</h3>
+                <div id="trail-list" class="item-list"></div>
+            </div>
+
+            <div id="tab-inv" class="tab-content">
+                <h3>Arsenal & Inventário</h3>
+                <div id="inv-list" class="item-list"></div>
+                <div style="margin-top:20px;"><label>Anotações</label><textarea id="notes-inv" style="width:100%; height:150px; background:#111; border:1px solid #333; color:#ccc;" onchange="autoSave()"></textarea></div>
+            </div>
+
+            <div id="tab-ocult" class="tab-content">
+                <h3>Rituais & Poderes</h3>
+                <div id="power-list" class="item-list"></div>
+                <div style="margin-top:20px; border-top:1px solid #333; padding-top:10px;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <span>DT Rituais: <strong id="dt-val" style="color:var(--accent)">10</strong></span>
+                        <span>Limite PE/Turno: <strong id="pe-limit" style="color:var(--energy)">1</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <div id="tab-comp" class="tab-content">
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <input type="text" id="comp-search" placeholder="Pesquisar..." style="margin-bottom:0; flex:1;" onkeyup="renderComp()">
+                    <button class="btn-action" style="background:var(--accent); color:black; font-weight:bold;" onclick="openModal('create')">+ CRIAR</button>
+                </div>
+                <div class="comp-filters">
+                    <button class="filter-btn active" onclick="setFilter('all',this)">Tudo</button>
+                    <button class="filter-btn" onclick="setFilter('weapon',this)">Armas</button>
+                    <button class="filter-btn" onclick="setFilter('ritual',this)">Rituais</button>
+                    <button class="filter-btn" onclick="setFilter('item',this)">Itens</button>
+                    <button class="filter-btn" onclick="setFilter('power',this)">Poderes</button>
+                </div>
+                <div id="comp-grid" class="comp-grid"></div>
+            </div>
+
+        </div>
+
+        <div id="col-right" class="col-side col-right">
+            <h3>Dados</h3>
+            <div id="digital-dice" class="dice-grid">
+                <button class="btn-action" onclick="roll(4)">d4</button><button class="btn-action" onclick="roll(6)">d6</button>
+                <button class="btn-action" onclick="roll(8)">d8</button><button class="btn-action" onclick="roll(10)">d10</button>
+                <button class="btn-action" onclick="roll(12)">d12</button><button class="btn-action" onclick="roll(20)" style="color:var(--accent); border-color:var(--accent)">d20</button>
+                <button class="btn-action" style="grid-column:span 2" onclick="roll(100)">d100</button>
+            </div>
+            <div id="phy-msg" style="display:none; color:#777; font-style:italic; text-align:center; margin-bottom:10px;">Modo Físico Ativo</div>
+
+            <h3>Log</h3>
+            <div id="log"><div class="log-entry">> S.I.G.O.P Carregado.</div></div>
+            <button class="btn-action" style="width:100%; margin-top:5px;" onclick="document.getElementById('log').innerHTML=''">Limpar</button>
+        </div>
+
+    </div>
+
+<script>
+    // --- ESTADO ---
+    let phyMode = false;
+    let compFilter = 'all';
+    let currentId = Date.now().toString(); // ID do personagem atual
+    let stats = { pv:0, maxPv:0, pd:0, maxPd:0 };
+    // Armazena itens adicionados (Array de Objetos)
+    let addedItems = [];
+
+    const SKILL_MAP = {
+        "Acrobacia":"agi", "Adestramento":"pre", "Artes":"pre", "Atletismo":"for", "Atualidades":"int",
+        "Ciências":"int", "Crime":"agi", "Diplomacia":"pre", "Enganação":"pre", "Fortitude":"vig",
+        "Furtividade":"agi", "Iniciativa":"agi", "Intimidação":"pre", "Intuição":"pre", "Investigação":"int",
+        "Luta":"for", "Medicina":"int", "Ocultismo":"int", "Percepção":"pre", "Pilotagem":"agi",
+        "Pontaria":"agi", "Profissão":"int", "Reflexos":"agi", "Religião":"pre", "Sobrevivência":"int",
+        "Tática":"int", "Tecnologia":"int", "Vontade":"pre"
+    };
+
+    const DB = {
+        classes: {
+            "Combatente": { 
+                pv:20, pvN:4, pd:10, pdN:2, auto:["Luta","Fortitude","Reflexos"], 
+                trails: {
+                    "Aniquilador": {10:"A Favorita", 40:"Técnica Letal", 65:"Potência Máxima", 99:"Sublime"},
+                    "Guerreiro": {10:"Técnica Letal", 40:"Revidar", 65:"Força Opressora", 99:"Potência Marcial"},
+                    "Tropa de Choque": {10:"Casca Grossa", 40:"Cai Dentro", 65:"Duro de Matar", 99:"Imortal"}
+                }
+            },
+            "Especialista": { 
+                pv:16, pvN:3, pd:14, pdN:3, auto:["Percepção","Investigação","Vontade"],
+                trails: {
+                    "Atirador de Elite": {10:"Mira de Elite", 40:"Disparo Letal", 65:"Impacto", 99:"Infalível"},
+                    "Médico de Campo": {10:"Paramédico", 40:"Equipe Trauma", 65:"Resgate", 99:"Milagre"},
+                    "Infiltrador": {10:"Ataque Furtivo", 40:"Gatuno", 65:"Assassinar", 99:"Sombra Viva"}
+                }
+            },
+            "Ocultista": { 
+                pv:12, pvN:2, pd:20, pdN:4, auto:["Ocultismo","Vontade","Iniciativa"],
+                trails: {
+                    "Graduado": {10:"Grimório", 40:"Estudioso", 65:"Mente Sã", 99:"Saber Proibido"},
+                    "Flagelador": {10:"Poder do Sangue", 40:"Dor Fortificante", 65:"Absorver Agonia", 99:"Avatar"}
+                }
+            }
+        },
+        items: [
+            {n:"Faca", type:"weapon", d:"1d4", c:"19/x2", desc:"Corte, Leve, Ágil."},
+            {n:"Revólver", type:"weapon", d:"2d6", c:"19/x3", desc:"Balístico, Curto."},
+            {n:"Katana", type:"weapon", d:"1d10", c:"19/x2", desc:"Corte, Ágil."},
+            {n:"Fuzil", type:"weapon", d:"2d10", c:"19/x3", desc:"Balístico, Longo."},
+            {n:"Cicatrização", type:"ritual", cost:1, desc:"Cura 3d8+3.", dmg:"3d8+3"},
+            {n:"Decadência", type:"ritual", cost:1, desc:"Dano Morte.", dmg:"2d8+2"},
+            {n:"Eletrocussão", type:"ritual", cost:1, desc:"Dano Energia.", dmg:"3d6"},
+            {n:"Kit Médico", type:"item", desc:"+2 Medicina."},
+            {n:"Mochila", type:"item", desc:"+Espaço."},
+            {n:"Afortunado", type:"power", desc:"Rerola 1 teste."},
+            {n:"Golpe Pesado", type:"power", desc:"+1 dado dano melee."}
+        ]
+    };
+
+    window.onload = () => {
+        // Init Selects
+        const sc = document.getElementById('selClass');
+        const so = document.getElementById('selOrigem');
+        for(let c in DB.classes) sc.add(new Option(c,c));
+        ["Acadêmico", "Agente de Saúde", "Atleta", "Criminoso", "Cultista", "Desgarrado", "Engenheiro", "Executivo", "Investigador", "Lutador", "Mercenário", "Militar", "Policial", "Religioso", "TI", "Vítima"].forEach(o=>so.add(new Option(o,o)));
+
+        // Init Skills
+        const sl = document.getElementById('skills-container');
+        for(let s in SKILL_MAP) {
+            const d = document.createElement('div');
+            d.className = 'skill-row';
+            d.innerHTML = `<span>${s}</span><div style="display:flex; align-items:center;"><select id="sk-${s}" style="width:45px; margin:0;" onchange="autoSave()"><option value="0">DT</option><option value="5">TR</option><option value="10">VT</option><option value="15">EX</option></select><button class="skill-dice" onclick="rollSkill('${s}')">🎲</button></div>`;
+            sl.appendChild(d);
+        }
+
+        renderComp();
+        
+        // Tenta carregar último save
+        const last = localStorage.getItem('sigop_last_id');
+        if(last) loadChar(last);
+        else updateClass();
+    };
+
+    // --- SALVAR E CARREGAR ---
+    function getAllChars() {
+        return JSON.parse(localStorage.getItem('sigop_chars')) || {};
+    }
+
+    function saveCharData() {
+        const chars = getAllChars();
+        
+        // Coleta dados
+        const charData = {
+            id: currentId,
+            name: document.getElementById('char-name').value || "Sem Nome",
+            player: document.getElementById('player-name').value,
+            class: document.getElementById('selClass').value,
+            nex: document.getElementById('nex').value,
+            origem: document.getElementById('selOrigem').value,
+            trilha: document.getElementById('selTrilha').value,
+            attr: {
+                agi: document.getElementById('agi').value,
+                for: document.getElementById('for').value,
+                int: document.getElementById('int').value,
+                pre: document.getElementById('pre').value,
+                vig: document.getElementById('vig').value
+            },
+            skills: {},
+            stats: { pv: stats.pv, pd: stats.pd },
+            items: addedItems,
+            notes: document.getElementById('notes-inv').value
+        };
+
+        // Salva Skills
+        for(let s in SKILL_MAP) {
+            charData.skills[s] = document.getElementById('sk-'+s).value;
+        }
+
+        chars[currentId] = charData;
+        localStorage.setItem('sigop_chars', JSON.stringify(chars));
+        localStorage.setItem('sigop_last_id', currentId);
+    }
+
+    function autoSave() { saveCharData(); }
+
+    function loadChar(id) {
+        const chars = getAllChars();
+        const data = chars[id];
+        if(!data) return;
+
+        currentId = id;
+        document.getElementById('char-name').value = data.name;
+        document.getElementById('player-name').value = data.player;
+        document.getElementById('selClass').value = data.class;
+        updateClass(false); // Atualiza trilhas sem resetar
+        document.getElementById('selTrilha').value = data.trilha;
+        document.getElementById('nex').value = data.nex;
+        document.getElementById('selOrigem').value = data.origem;
+        
+        // Attr
+        document.getElementById('agi').value = data.attr.agi;
+        document.getElementById('for').value = data.attr.for;
+        document.getElementById('int').value = data.attr.int;
+        document.getElementById('pre').value = data.attr.pre;
+        document.getElementById('vig').value = data.attr.vig;
+
+        // Skills
+        for(let s in data.skills) {
+            const el = document.getElementById('sk-'+s);
+            if(el) el.value = data.skills[s];
+        }
+
+        // Items
+        addedItems = data.items || [];
+        renderAddedItems();
+
+        // Notes
+        document.getElementById('notes-inv').value = data.notes || "";
+
+        updateAll(); // Recalcula tudo
+        
+        // Restaura Barras exatas
+        stats.pv = data.stats.pv;
+        stats.pd = data.stats.pd;
+        drawBars();
+    }
+
+    function createNewChar() {
+        currentId = Date.now().toString();
+        // Reset fields
+        document.getElementById('char-name').value = "";
+        document.getElementById('nex').value = 5;
+        ['agi','for','int','pre','vig'].forEach(id=>document.getElementById(id).value=1);
+        addedItems = [];
+        renderAddedItems();
+        updateClass();
+        closeModal('manager');
+    }
+
+    function openManager() {
+        const list = document.getElementById('saved-chars-list');
+        list.innerHTML = "";
+        const chars = getAllChars();
+        
+        if(Object.keys(chars).length === 0) list.innerHTML = "<div style='color:#666; text-align:center;'>Nenhum agente salvo.</div>";
+
+        for(let id in chars) {
+            const c = chars[id];
+            const div = document.createElement('div');
+            div.className = 'save-slot';
+            div.innerHTML = `
+                <div>
+                    <div class="slot-name">${c.name}</div>
+                    <div class="slot-info">${c.class} - NEX ${c.nex}%</div>
+                </div>
+                <div>
+                    <button class="btn-action" style="background:var(--accent); color:black;" onclick="loadChar('${id}'); closeModal('manager')">CARREGAR</button>
+                    <button class="btn-action btn-del" onclick="deleteChar('${id}')">X</button>
+                </div>
+            `;
+            list.appendChild(div);
+        }
+        openModal('manager');
+    }
+
+    function deleteChar(id) {
+        const chars = getAllChars();
+        delete chars[id];
+        localStorage.setItem('sigop_chars', JSON.stringify(chars));
+        openManager(); // Refresh
+    }
+
+    function exportChar() {
+        const chars = getAllChars();
+        const data = chars[currentId];
+        const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${data.name || 'agente'}.json`;
+        a.click();
+    }
+
+    function importChar(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = JSON.parse(e.target.result);
+            currentId = Date.now().toString(); // New ID import
+            const chars = getAllChars();
+            chars[currentId] = data;
+            localStorage.setItem('sigop_chars', JSON.stringify(chars));
+            loadChar(currentId);
+            closeModal('manager');
+            alert("Ficha carregada com sucesso!");
+        };
+        reader.readAsText(file);
+    }
+
+    // --- RENDERIZAÇÃO DE ITENS ADICIONADOS ---
+    function renderAddedItems() {
+        document.getElementById('inv-list').innerHTML = "";
+        document.getElementById('power-list').innerHTML = "";
+
+        addedItems.forEach((item, index) => {
+            let target = (item.type=='weapon'||item.type=='item')?'inv-list':'power-list';
+            let act = ""; let color = "#333";
+            
+            if(item.type=='weapon') { 
+                color="var(--danger)"; 
+                act=`<button class="btn-action" onclick="attack('${item.n}','${item.d}','${item.c}')">ATACAR</button>`; 
+            } else if(item.type=='ritual') { 
+                color="#8b5cf6"; 
+                act=`<button class="btn-action" onclick="cast('${item.n}',${item.cost},'${item.dmg}')">USAR</button>`; 
+            }
+
+            const div = document.createElement('div');
+            div.className = 'item-card';
+            div.style.borderLeftColor = color;
+            div.innerHTML = `
+                <div class="item-info"><span class="item-name">${item.n}</span><span class="item-meta">${item.desc}</span></div>
+                ${act}
+                <button class="btn-action btn-del" onclick="removeItem(${index})">X</button>
+            `;
+            document.getElementById(target).appendChild(div);
+        });
+        autoSave();
+    }
+
+    function addToSheet(n) {
+        const item = DB.items.find(i=>i.n===n);
+        if(item) {
+            addedItems.push(item);
+            renderAddedItems();
+        }
+    }
+
+    function removeItem(index) {
+        addedItems.splice(index, 1);
+        renderAddedItems();
+    }
+
+    // --- LÓGICA CORE ---
+    function updateClass(reset=true) {
+        const cName = document.getElementById('selClass').value;
+        const st = document.getElementById('selTrilha');
+        st.innerHTML = "";
+        for(let t in DB.classes[cName].trails) st.add(new Option(t,t));
+        
+        if(reset) {
+            document.querySelectorAll('select[id^="sk-"]').forEach(s=>s.value=0);
+            DB.classes[cName].auto.forEach(s => { const el=document.getElementById('sk-'+s); if(el) el.value=5; });
+        }
+        updateAll();
+    }
+
+    function updateAll() {
+        const nEl = document.getElementById('nex');
+        let n = parseInt(nEl.value)||5;
+        if(n%5!==0) n = Math.round(n/5)*5; if(n>99) n=99; if(n<0) n=0;
+        if(parseInt(nEl.value)!==n) nEl.value=n;
+
+        // Calc Pontos
+        let limit = 9; 
+        if(n>=20) limit++; if(n>=50) limit++; if(n>=80) limit++; if(n>=95) limit++;
+        let totalSpent = 0;
+        ['agi','for','int','pre','vig'].forEach(id=>{
+            const el = document.getElementById(id);
+            let v = parseInt(el.value);
+            if(v>5) {v=5; el.value=5;} if(v<0) {v=0; el.value=0;}
+            totalSpent += v;
+        });
+        const msg = document.getElementById('points-msg');
+        msg.innerText = `Pontos Totais: ${totalSpent} / ${limit}`;
+        msg.className = totalSpent > limit ? 'points-warning' : 'points-ok';
+
+        // Barras
+        const nivel = Math.max(1, Math.floor(n/5));
+        const peLimit = 1 + Math.floor(n/5);
+        document.getElementById('pe-limit').innerText = peLimit;
+        
+        const pre = parseInt(document.getElementById('pre').value)||1;
+        document.getElementById('dt-val').innerText = 10 + peLimit + pre;
+
+        const cData = DB.classes[document.getElementById('selClass').value];
+        const vig = parseInt(document.getElementById('vig').value)||1;
+
+        let pv = cData.pv + vig + ((nivel>1)?(nivel-1)*(cData.pvN+vig):0);
+        let pd = cData.pd + ((nivel>1)?(nivel-1)*cData.pdN:0);
+
+        stats.maxPv = pv; stats.maxPd = pd;
+        // Se nunca carregou, enche a barra
+        if(stats.pv===0){stats.pv=pv; stats.pd=pd;}
+        
+        drawBars();
+
+        // Trilha
+        const tName = document.getElementById('selTrilha').value;
+        const tPowers = cData.trails[tName];
+        const tCont = document.getElementById('trail-list');
+        tCont.innerHTML = "";
+        [10,40,65,99].forEach(tier => {
+            if(n >= tier) {
+                const div = document.createElement('div');
+                div.className = 'item-card';
+                div.style.borderLeftColor = "var(--accent)";
+                div.innerHTML = `<div class="item-info"><span class="item-name">${tName} ${tier}%</span><span class="item-meta">${tPowers[tier]}</span></div>`;
+                tCont.appendChild(div);
+            }
+        });
+    }
+
+    // --- AÇÕES ---
+    function rollSkill(sk) {
+        const attrKey = SKILL_MAP[sk];
+        const attrVal = parseInt(document.getElementById(attrKey).value);
+        const bonus = parseInt(document.getElementById('sk-'+sk).value);
+
+        if(phyMode) {
+            let msg = attrVal > 0 ? `Role <strong>${attrVal}d20</strong>` : `Role <strong>2d20</strong> (Desvantagem)`;
+            msg += ` e some <strong>+${bonus}</strong>.`;
+            log(`Teste ${sk} (${attrKey.toUpperCase()}): ${msg}`);
+        } else {
+            let rolls = [];
+            let dice = attrVal <= 0 ? 2 : attrVal;
+            for(let i=0; i<dice; i++) rolls.push(Math.ceil(Math.random()*20));
+            let res = attrVal <= 0 ? Math.min(...rolls) : Math.max(...rolls);
+            let total = res + bonus;
+            let det = attrVal <= 0 ? `Menor de [${rolls}]` : `Maior de [${rolls}]`;
+            let color = "white"; if(res===20) color="var(--switch-on)"; if(res===1) color="var(--danger)";
+            log(`<strong>${sk}</strong>: <span style="color:${color}; font-size:1.2em; font-weight:bold;">${total}</span> <small>(${det} + ${bonus})</small>`);
+        }
+    }
+
+    function attack(n,d,c) {
+        if(phyMode) log(`<strong>Ataque ${n}</strong>: Role Luta/Pontaria. Dano: <strong>${d}</strong>. Crit: ${c}`);
+        else log(`<strong>Ataque ${n}</strong><br><button class="btn-action" style="width:100%" onclick="rollDmg('${d}')">Rolar Dano (${d})</button>`);
+    }
+
+    function cast(n,cost,dmg) {
+        if(stats.pd < cost) { alert("PD Insuficiente!"); return; }
+        mod('pd', -cost);
+        if(phyMode) log(`<strong>Conjurou ${n}</strong> (-${cost} PD). Efeito: ${dmg}`);
+        else {
+            let h = `<strong>Conjurou ${n}</strong> (-${cost} PD).`;
+            if(dmg) h += `<button class="btn-action" style="width:100%; margin-top:5px;" onclick="rollDmg('${dmg}')">Rolar (${dmg})</button>`;
+            log(h);
+        }
+    }
+
+    function rollDmg(f) {
+        let clean = f.replace('-',''); const parts = clean.split('+');
+        const [count, face] = parts[0].split('d').map(Number);
+        const mod = parts.length > 1 ? parseInt(parts[1]) : 0;
+        let t=0; let r=[];
+        for(let i=0;i<count;i++){let v=Math.ceil(Math.random()*face); t+=v; r.push(v);}
+        t+=mod;
+        log(`Dano: <span class="res" style="color:var(--danger)">${t}</span> [${r}]+${mod}`);
+    }
+
+    function roll(d) {
+        if(phyMode) return;
+        const r = Math.ceil(Math.random()*d);
+        log(`d${d}: <span class="res">${r}</span>`);
+    }
+
+    // --- MODAIS & INTERFACE ---
+    function openModal(id) { document.getElementById('modal-'+id).style.display='flex'; }
+    function closeModal(id) { document.getElementById('modal-'+id).style.display='none'; }
+    
+    function toggleSide(id) { document.getElementById(id).classList.toggle('collapsed'); }
+    function togglePhy() { phyMode = document.getElementById('phy-switch').checked; document.getElementById('digital-dice').classList.toggle('hidden'); document.getElementById('phy-msg').style.display = phyMode ? 'block' : 'none'; }
+    function tab(id) { document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); document.getElementById('tab-'+id).classList.add('active'); const btns = document.querySelectorAll('.nav-btn'); if(id=='char') btns[0].classList.add('active'); if(id=='inv') btns[1].classList.add('active'); if(id=='ocult') btns[2].classList.add('active'); if(id=='comp') btns[3].classList.add('active'); }
+    function setFilter(f,b) { compFilter=f; document.querySelectorAll('.filter-btn').forEach(btn=>btn.classList.remove('active')); b.classList.add('active'); renderComp(); }
+    function log(h) { const l=document.getElementById('log'); l.innerHTML=`<div class="log-entry">${h}</div>`+l.innerHTML; }
+    function mod(k,v) { if(k=='pv') stats.pv=Math.min(Math.max(stats.pv+v,0),stats.maxPv); if(k=='pd') stats.pd=Math.min(Math.max(stats.pd+v,0),stats.maxPd); updateAll(); autoSave(); }
+
+    function renderComp() {
+        const txt = document.getElementById('comp-search').value.toLowerCase();
+        const grid = document.getElementById('comp-grid');
+        grid.innerHTML = "";
+        DB.items.forEach(i => {
+            if(compFilter!=='all' && i.type!==compFilter) return;
+            if(!i.n.toLowerCase().includes(txt)) return;
+            const div = document.createElement('div');
+            div.className = 'comp-card';
+            div.innerHTML = `<div><strong style="display:block">${i.n}</strong><small style="color:#666">${i.type} - ${i.desc}</small></div><div class="add-icon" onclick="addToSheet('${i.n}')">+</div>`;
+            grid.appendChild(div);
+        });
+    }
+
+    function toggleModalFields() {
+        const t = document.getElementById('new-type').value;
+        document.getElementById('field-dmg').style.display = (t=='weapon'||t=='ritual')?'block':'none';
+        document.getElementById('field-crit').style.display = (t=='weapon')?'block':'none';
+        document.getElementById('field-cost').style.display = (t=='ritual')?'block':'none';
+    }
+
+    function saveHomebrew() {
+        const t = document.getElementById('new-type').value;
+        const n = document.getElementById('new-name').value;
+        const desc = document.getElementById('new-desc').value;
+        if(!n) return alert("Nome obrigatório");
+        let item = {n, type:t, desc};
+        if(t=='weapon') { item.d=document.getElementById('new-dmg').value; item.c=document.getElementById('new-crit').value; }
+        if(t=='ritual') { item.dmg=document.getElementById('new-dmg').value; item.cost=parseInt(document.getElementById('new-cost').value); }
+        DB.items.push(item); renderComp(); closeModal('create'); alert("Criado!");
+    }
+
+    // BARRAS
+    function drawBars() {
+        document.getElementById('txtPV').innerText=stats.pv+"/"+stats.maxPv;
+        document.getElementById('barPV').style.width=((stats.pv/stats.maxPv)*100)+"%";
+        document.getElementById('txtPD').innerText=stats.pd+"/"+stats.maxPd;
+        document.getElementById('barPD').style.width=((stats.pd/stats.maxPd)*100)+"%";
+    }
+
+</script>
+</body>
+</html>
